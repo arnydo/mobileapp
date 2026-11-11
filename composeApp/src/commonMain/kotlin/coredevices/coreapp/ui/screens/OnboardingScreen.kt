@@ -99,6 +99,14 @@ class OnboardingViewModel(private val config: CoreConfigHolder) : ViewModel() {
     fun setIndexEnabled(enabled: Boolean) {
         config.update(config.config.value.copy(enableIndex = enabled))
     }
+    fun updatePhoneOnlyNavigation(tabs: List<String>) {
+        config.update(config.config.value.copy(
+            enableIndex = true,
+            disableRingBluetoothSync = true,
+            startOnFirstNavBarTab = true,
+            navBarTabs = tabs.ifEmpty { listOf("Index", "Watches", "Settings") },
+        ))
+    }
 }
 
 private val logger = Logger.withTag("OnboardingScreen")
@@ -222,6 +230,11 @@ fun OnboardingScreen(
                             icon = Icons.Default.Smartphone,
                             onClick = {
                                 viewModel.setIndexEnabled(true)
+                                val currentConfig = viewModel.coreConfig.value
+                                val tabs = currentConfig.navBarTabs.orEmpty()
+                                viewModel.updatePhoneOnlyNavigation(
+                                    listOf("Index") + tabs.filterNot { it == "Index" }
+                                )
                                 viewModel.deviceChoice.value = DeviceChoice.PhoneOnly
                                 viewModel.stage.value = OnboardingStage.SignIn
                             },
