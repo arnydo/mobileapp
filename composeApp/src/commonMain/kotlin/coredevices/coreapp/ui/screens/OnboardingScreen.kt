@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Devices
+import androidx.compose.material.icons.filled.Smartphone
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Watch
 import androidx.compose.material3.Card
@@ -87,6 +88,7 @@ enum class DeviceChoice {
     Watch,
     Index01,
     Both,
+    PhoneOnly,
 }
 
 class OnboardingViewModel(private val config: CoreConfigHolder) : ViewModel() {
@@ -147,6 +149,7 @@ fun OnboardingScreen(
     fun exitOnboarding() {
         logger.v { "exitOnboarding" }
         settings[SHOWN_ONBOARDING] = true
+        settings[PHONE_ONLY_INDEX_MODE] = viewModel.deviceChoice.value == DeviceChoice.PhoneOnly
         doneInitialOnboarding.onDoneInitialOnboarding()
         coreNav.navigateTo(PebbleRoutes.WatchHomeRoute)
     }
@@ -190,7 +193,7 @@ fun OnboardingScreen(
                         verticalArrangement = Arrangement.Center,
                     ) {
                         Text(
-                            text = "I have a:",
+                            text = "Choose how to use the app",
                             fontSize = 28.sp,
                             fontWeight = FontWeight.Bold,
                         )
@@ -213,6 +216,16 @@ fun OnboardingScreen(
                                 onClick = { chooseIndexDevice(DeviceChoice.Index01) },
                             )
                         }
+                        Spacer(modifier = Modifier.height(20.dp))
+                        DeviceChoiceCard(
+                            label = "Phone only",
+                            icon = Icons.Default.Smartphone,
+                            onClick = {
+                                viewModel.setIndexEnabled(true)
+                                viewModel.deviceChoice.value = DeviceChoice.PhoneOnly
+                                viewModel.stage.value = OnboardingStage.SignIn
+                            },
+                        )
                         Spacer(modifier = Modifier.height(20.dp))
                         DeviceChoiceCard(
                             label = "Both",
@@ -292,7 +305,14 @@ fun OnboardingScreen(
                             modifier = Modifier.padding(bottom = 25.dp),
                         )
                         Spacer(modifier = Modifier.height(10.dp))
-                        Text("Sign in to backup your Pebble account to backup apps, settings, etc", textAlign = TextAlign.Center)
+                        Text(
+                            if (viewModel.deviceChoice.value == DeviceChoice.PhoneOnly) {
+                                "Sign in to use the Index assistant and its connected services. No watch or ring is required."
+                            } else {
+                                "Sign in to backup your Pebble account to backup apps, settings, etc"
+                            },
+                            textAlign = TextAlign.Center,
+                        )
                         SignInButtons(
                             onDismiss = { viewModel.stage.value = OnboardingStage.Done },
                             primaryColor = true,
@@ -317,7 +337,7 @@ fun OnboardingScreen(
                         verticalArrangement = Arrangement.Center,
                     ) {
                         PebbleElevatedButton(
-                            text = "Connect a Pebble!",
+                            text = if (viewModel.deviceChoice.value == DeviceChoice.PhoneOnly) "Open assistant" else "Connect a Pebble!",
                             onClick = ::exitOnboarding,
                             primaryColor = true,
                         )
@@ -372,3 +392,4 @@ val HighlightStyle = SpanStyle(
 expect fun Permission.descriptionOnboarding(): AnnotatedString
 
 const val SHOWN_ONBOARDING = "shown_onboarding"
+const val PHONE_ONLY_INDEX_MODE = "phone_only_index_mode"
